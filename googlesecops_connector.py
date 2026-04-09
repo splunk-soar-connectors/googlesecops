@@ -1,6 +1,6 @@
 # File: googlesecops_connector.py
 #
-# Copyright (c) 2025 Splunk Inc.
+# Copyright (c) 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,133 +13,183 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 
+import json
+from importlib import import_module
+
 import phantom.app as phantom
 import requests
-from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
-from googlesecops_consts import (
-    GOOGLESECOPS_CONNECTIVITY_ENDPOINT,
-    GOOGLESECOPS_ERR_CONNECTIVITY_TEST,
-    GOOGLESECOPS_SUCC_CONNECTIVITY_TEST,
-)
+from actions import BaseAction  # pylint: disable=import-error,no-name-in-module
+from googlesecops_client import GoogleSecOpsClient
+from googlesecops_utils import GoogleSecOpsUtils, Validator
 
 
-class GooglesecopsConnector(BaseConnector):
-    """
-    Googlesecops connector class that serves as a starting point for new connectors.
-    """
+class RetVal(tuple):
+    def __new__(cls, val1, val2=None):
+        return tuple.__new__(RetVal, (val1, val2))
 
+
+class GoogleSecOpsConnector(BaseConnector):
     def __init__(self):
         super().__init__()
-        self._base_url = None
-        self._api_key = None
-        self._verify = False
 
-    def _make_rest_call(self, endpoint, action_result, headers=None, params=None, data=None, json=None, method="get"):
-        """
-        Helper function to make REST calls for the connector.
-        """
-        try:
-            url = f"{self._base_url}{endpoint}"
-            self.debug_print(f"Making REST call to: {url}")
-
-            request_func = getattr(requests, method.lower())
-
-            response = request_func(url, json=json, data=data, headers=headers, params=params, verify=self._verify)
-
-            # Add debug data
-            if hasattr(action_result, "add_debug_data"):
-                action_result.add_debug_data({"r_status_code": response.status_code})
-                action_result.add_debug_data({"r_text": response.text})
-                action_result.add_debug_data({"r_headers": response.headers})
-
-            # Process response
-            if 200 <= response.status_code < 300:
-                try:
-                    if response.text:
-                        return phantom.APP_SUCCESS, response.json()
-                    return phantom.APP_SUCCESS, {}
-                except ValueError:
-                    return phantom.APP_SUCCESS, response.text
-
-            # Error handling
-            error_message = f"Error from server. Status Code: {response.status_code}"
-            if response.text:
-                try:
-                    resp_json = response.json()
-                    error_message = f"Error from server. Status Code: {response.status_code}. Error: {resp_json.get('error', 'Unknown error')}"
-                except ValueError:
-                    error_message = f"Error from server. Status Code: {response.status_code}. Error: {response.text}"
-
-            return action_result.set_status(phantom.APP_ERROR, error_message), None
-
-        except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, f"Error making REST call: {e!s}"), None
-
-    def _handle_test_connectivity(self, param):
-        """
-        Validate the asset configuration for connectivity using supplied credentials.
-        """
-        action_result = self.add_action_result(ActionResult(dict(param)))
-        self.save_progress("Connecting to instance...")
-
-        # Example test connectivity code
-        endpoint = GOOGLESECOPS_CONNECTIVITY_ENDPOINT
-        headers = {"Authorization": f"Bearer {self._api_key}"}
-
-        ret_val, _ = self._make_rest_call(endpoint, action_result, headers=headers)
-
-        if phantom.is_fail(ret_val):
-            self.save_progress(GOOGLESECOPS_ERR_CONNECTIVITY_TEST)
-            return action_result.get_status()
-
-        self.save_progress(GOOGLESECOPS_SUCC_CONNECTIVITY_TEST)
-        return action_result.set_status(phantom.APP_SUCCESS)
-
-    def initialize(self):
-        """
-        Initialize the connector.
-        """
-        self.debug_print("Initializing connector")
-        config = self.get_config()
-
-        # Get configuration parameters
-        self._base_url = config.get("host")
-        self._api_key = config.get("api_key")
-        self._verify = config.get("verify_server_cert", False)
-
-        return phantom.APP_SUCCESS
+        self._state = None
+        self.client = None
+        self.validator = None
+        self.config = None
+        self.utils = None
 
     def handle_action(self, param):
         """
-        Dispatcher for actions.
+        Handle the flow of execution, calls the appropriate method for the action.
+
+        This method retrieves the action identifier for the current App Run and imports the corresponding action module.
+        It then searches for the appropriate action class within the imported module and creates an instance of it.
+        Finally, it executes the action by calling the `execute` method of the action instance.
+
+        Args:
+            param (dict): A dictionary containing the parameters for the action.
+
+        Returns:
+            int: The status code indicating the success or failure of the action execution.
+                - `phantom.APP_SUCCESS`: The action execution was successful.
+                - `phantom.APP_ERROR`: The action execution failed.
         """
-        self.debug_print("action_id ", self.get_action_identifier())
+        action_id = self.get_action_identifier()
+        self.debug_print("action_id", self.get_action_identifier())
 
-        action_mapping = {
-            "test_connectivity": self._handle_test_connectivity,
-            # Add more action handlers here
-        }
+        action_name = f"actions.googlesecops_{action_id}"
+        import_module(action_name, package="actions")
 
-        action = self.get_action_identifier()
-        action_execution_status = phantom.APP_SUCCESS
+        base_action_sub_classes = BaseAction.__subclasses__()
+        self.debug_print(f"Finding action module: {action_name}")
+        for action_class in base_action_sub_classes:
+            if action_class.__module__ == action_name:
+                action = action_class(self, param)
+                return action.execute()
 
-        if action in action_mapping:
-            action_function = action_mapping[action]
-            action_execution_status = action_function(param)
+        self.debug_print("Action not implemented")
+        return phantom.APP_ERROR
 
-        return action_execution_status
+    def initialize(self):
+        """
+        Initializes the connector and creates the utility object.
+
+        Returns:
+            int: The status code indicating the success or failure of the initialization.
+                - `phantom.APP_SUCCESS`: The initialization was successful.
+                - `phantom.APP_ERROR`: The initialization failed.
+        """
+        self._state = self.load_state()
+
+        if not self._state or not isinstance(self._state, dict):
+            self.debug_print("State file is corrupted or missing")
+            self._state = {"app_version": self.get_app_json().get("app_version")}
+
+        self.config = self.get_config()
+
+        try:
+            self.validator = Validator()
+            self.utils = GoogleSecOpsUtils(self)
+            self.client = GoogleSecOpsClient(self, self.config)
+        except Exception as e:
+            error_msg = self.utils._get_error_message_from_exception(e)
+            self.save_progress(f"Error initializing client: {error_msg}")
+            return phantom.APP_ERROR
+
+        return phantom.APP_SUCCESS
+
+    def finalize(self):
+        """
+        This is called after all actions are completed and the app is exiting
+
+        This is used to save any state that needs to be saved across actions and app upgrades
+
+        Returns:
+            int: The status code indicating the success or failure of the finalize
+                - `phantom.APP_SUCCESS`: The finalize was successful
+                - `phantom.APP_ERROR`: The finalize failed
+        """
+        self.save_state(self._state)
+        return phantom.APP_SUCCESS
 
 
-if __name__ == "__main__":
+def main():
+    """Use this method to debug action using input test JSON file."""
+    import argparse
     import sys
 
     import pudb
 
     pudb.set_trace()
 
-    connector = GooglesecopsConnector()
-    connector.print_progress_message = True
+    argparser = argparse.ArgumentParser()
+
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
+    argparser.add_argument("-v", "--verify", help="verify", required=False, default=False)
+
+    args = argparser.parse_args()
+    session_id = None
+
+    username = args.username
+    password = args.password
+    verify = args.verify
+
+    if username is not None and password is None:
+        # User specified a username but not a password, so ask
+        import getpass
+
+        password = getpass.getpass("Password: ")
+
+    if username and password:
+        try:
+            login_url = GoogleSecOpsConnector._get_phantom_base_url() + "/login"
+
+            print("Accessing the Login page")
+            r = requests.get(login_url, verify=verify)  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            csrftoken = r.cookies["csrftoken"]
+
+            data = {}
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
+
+            headers = {}
+            headers["Cookie"] = "csrftoken=" + csrftoken
+            headers["Referer"] = login_url
+
+            print("Logging into Platform to get the session id")
+            r2 = requests.post(
+                login_url,
+                verify=verify,
+                data=data,
+                headers=headers,  # nosemgrep: python.requests.best-practice.use-timeout.use-timeout
+            )
+            session_id = r2.cookies["sessionid"]
+        except Exception as e:
+            print("Unable to get session id from the platform. Error: " + str(e))
+            sys.exit(1)
+
+    with open(args.input_test_json) as f:
+        in_json = f.read()
+        in_json = json.loads(in_json)
+        print(json.dumps(in_json, indent=4))
+
+        connector = GoogleSecOpsConnector()
+        connector.print_progress_message = True
+
+        if session_id is not None:
+            in_json["user_session_token"] = session_id
+            connector._set_csrf_info(csrftoken, headers["Referer"])
+
+        ret_val = connector._handle_action(json.dumps(in_json), None)
+        print(json.dumps(json.loads(ret_val), indent=4))
 
     sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

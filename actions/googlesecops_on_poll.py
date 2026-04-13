@@ -39,9 +39,7 @@ class OnPollAction(BaseAction):
         Returns:
             phantom.APP_SUCCESS/phantom.APP_ERROR
         """
-        self._connector.save_progress(
-            consts.EXECUTION_START_MSG.format("on poll")
-        )
+        self._connector.save_progress(consts.EXECUTION_START_MSG.format("on poll"))
 
         poll_config = self._get_poll_configuration()
 
@@ -63,20 +61,14 @@ class OnPollAction(BaseAction):
         max_artifacts = self._connector.client.max_artifacts
 
         if is_poll_now:
-            self._connector.save_progress(
-                "Running POLL NOW (20 minute timeout)"
-            )
+            self._connector.save_progress("Running POLL NOW (20 minute timeout)")
             max_results = self._connector.client.max_results_poll_now
         else:
-            self._connector.save_progress(
-                "Running scheduled/interval poll (50 minute timeout)"
-            )
+            self._connector.save_progress("Running scheduled/interval poll (50 minute timeout)")
             max_results = self._connector.client.max_results_scheduled_poll
         poll_timeout = consts.POLL_TIMEOUT
 
-        self._connector.save_progress(
-            f"Max results: {max_results}, Max artifacts: {max_artifacts}"
-        )
+        self._connector.save_progress(f"Max results: {max_results}, Max artifacts: {max_artifacts}")
 
         return {
             "is_poll_now": is_poll_now,
@@ -114,16 +106,10 @@ class OnPollAction(BaseAction):
         # Build streaming endpoint URL
         stream_url = f"{self._connector.client.base_url}/legacy:legacyStreamDetectionAlerts"
 
-        self._connector.save_progress(
-            f"Connecting to streaming endpoint: {stream_url}"
-        )
+        self._connector.save_progress(f"Connecting to streaming endpoint: {stream_url}")
 
-        page_token, page_start_time, previous_start_time = (
-            self._setup_pagination(is_poll_now)
-        )
-        request_body = self._build_request_body(
-            page_token, page_start_time, max_results
-        )
+        page_token, page_start_time, previous_start_time = self._setup_pagination(is_poll_now)
+        request_body = self._build_request_body(page_token, page_start_time, max_results)
         self._configure_rule_filters()
 
         return self._make_streaming_request(
@@ -153,31 +139,23 @@ class OnPollAction(BaseAction):
         previous_start_time = state.get("page_start_time")
 
         if previous_start_time:
-            self._connector.debug_print(
-                f"Initial start_time from state: {previous_start_time}"
-            )
+            self._connector.debug_print(f"Initial start_time from state: {previous_start_time}")
 
         # Priority 1: Check for page_token in state
         page_token = state.get("page_token")
         if page_token:
             self._connector.save_progress("Resuming with page token from state")
-            self._connector.debug_print(
-                f"Using page_token: {page_token[:20]}..."
-            )
+            self._connector.debug_print(f"Using page_token: {page_token[:20]}...")
             return page_token, "", previous_start_time
 
         # Priority 2: Check for page_start_time in state
         page_start_time = state.get("page_start_time")
         if page_start_time:
-            self._connector.save_progress(
-                f"Resuming from page_start_time in state: {page_start_time}"
-            )
+            self._connector.save_progress(f"Resuming from page_start_time in state: {page_start_time}")
             return None, page_start_time, previous_start_time
 
         # Priority 3: Use start_time from config params
-        page_start_time = self._get_configured_or_default_start_time(
-            "scheduled polling"
-        )
+        page_start_time = self._get_configured_or_default_start_time("scheduled polling")
         return None, page_start_time, previous_start_time
 
     def _get_configured_or_default_start_time(self, poll_type):
@@ -185,52 +163,37 @@ class OnPollAction(BaseAction):
         page_start_time = self._connector.client.start_time
 
         if not page_start_time:
-            self._connector.debug_print(
-                "[on_poll] No start_time configured, defaulting to last 1 day"
-            )
+            self._connector.debug_print("[on_poll] No start_time configured, defaulting to last 1 day")
             start_dt = datetime.now(UTC) - timedelta(days=1)
             page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
         else:
             # Validate that configured start_time is not more than 7 days in the past
-            ret_val, start_dt = (
-                self._connector.validator.validate_time_parameter(
-                    self._action_result,
-                    page_start_time,
-                    "start_time",
-                    allow_future=False,
-                    max_days_past=7,
-                )
+            ret_val, start_dt = self._connector.validator.validate_time_parameter(
+                self._action_result,
+                page_start_time,
+                "start_time",
+                allow_future=False,
+                max_days_past=7,
             )
 
             if phantom.is_fail(ret_val):
-                self._connector.save_progress(
-                    "Configured start_time is more than 7 days in the past or invalid. Using last 1 day instead."
-                )
+                self._connector.save_progress("Configured start_time is more than 7 days in the past or invalid. Using last 1 day instead.")
                 start_dt = datetime.now(UTC) - timedelta(days=1)
                 page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
 
-        self._connector.save_progress(
-            f"Using start time {page_start_time} for {poll_type}"
-        )
+        self._connector.save_progress(f"Using start time {page_start_time} for {poll_type}")
         return page_start_time
 
     def _setup_poll_now_pagination(self):
         """Setup pagination for poll now."""
-        page_start_time = (
-            self._connector.client.start_time_poll_now
-            or self._connector.client.start_time
-        )
+        page_start_time = self._connector.client.start_time_poll_now or self._connector.client.start_time
 
         if not page_start_time:
-            self._connector.debug_print(
-                "[on_poll] No start_time configured for poll_now, defaulting to last 1 day"
-            )
+            self._connector.debug_print("[on_poll] No start_time configured for poll_now, defaulting to last 1 day")
             start_dt = datetime.now(UTC) - timedelta(days=1)
             page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
 
-        self._connector.save_progress(
-            f"Using start time {page_start_time} for poll now."
-        )
+        self._connector.save_progress(f"Using start time {page_start_time} for poll now.")
         return None, page_start_time, None
 
     def _build_request_body(self, page_token, page_start_time, max_results):
@@ -258,34 +221,24 @@ class OnPollAction(BaseAction):
         if rule_ids and rule_ids != ["-"]:
             if exclude_rule_ids:
                 self._excluded_rule_ids = set(rule_ids)
-                self._connector.save_progress(
-                    f"Will exclude detections with rule IDs: {rule_ids}"
-                )
+                self._connector.save_progress(f"Will exclude detections with rule IDs: {rule_ids}")
             else:
                 self._included_rule_ids = set(rule_ids)
-                self._connector.save_progress(
-                    f"Will include only detections with rule ids: {rule_ids}"
-                )
+                self._connector.save_progress(f"Will include only detections with rule ids: {rule_ids}")
 
         rule_names = self._connector.client.rule_names_for_ingestion
         exclude_rule_names = self._connector.client.exclude_rule_names
 
         if rule_names and rule_names != ["-"]:
             if exclude_rule_names and rule_ids and not exclude_rule_ids:
-                self._connector.save_progress(
-                    "Warning: Excluding rule names while including rule IDs may produce unexpected results."
-                )
+                self._connector.save_progress("Warning: Excluding rule names while including rule IDs may produce unexpected results.")
 
             if exclude_rule_names:
                 self._excluded_rule_names = set(rule_names)
-                self._connector.save_progress(
-                    f"Will exclude detections with rule names: {rule_names}"
-                )
+                self._connector.save_progress(f"Will exclude detections with rule names: {rule_names}")
             else:
                 self._included_rule_names = set(rule_names)
-                self._connector.save_progress(
-                    f"Will include only detections with rule names: {rule_names}"
-                )
+                self._connector.save_progress(f"Will include only detections with rule names: {rule_names}")
 
     def _make_streaming_request(
         self,
@@ -318,12 +271,8 @@ class OnPollAction(BaseAction):
                 )
 
         except Exception as e:
-            error_msg = self._connector.utils._get_error_message_from_exception(
-                e
-            )
-            self._connector.save_progress(
-                f"Error establishing streaming connection: {error_msg}"
-            )
+            error_msg = self._connector.utils._get_error_message_from_exception(e)
+            self._connector.save_progress(f"Error establishing streaming connection: {error_msg}")
             return self._action_result.set_status(phantom.APP_ERROR, error_msg)
 
     def _handle_error_response(self, response):
@@ -366,16 +315,12 @@ class OnPollAction(BaseAction):
             if response.encoding is None:
                 response.encoding = "utf-8"
 
-            for line in response.iter_lines(
-                decode_unicode=True, delimiter="\r\n"
-            ):
+            for line in response.iter_lines(decode_unicode=True, delimiter="\r\n"):
                 if not line:
                     continue
                 # Trim all characters before first opening brace, and after last closing brace
                 # Example: "  {'key1': 'value1'},  " -> "{'key1': 'value1'}"
-                json_string = (
-                    "{" + line.split("{", 1)[1].rsplit("}", 1)[0] + "}"
-                )
+                json_string = "{" + line.split("{", 1)[1].rsplit("}", 1)[0] + "}"
                 yield json.loads(json_string)
 
         except Exception as e:
@@ -415,9 +360,7 @@ class OnPollAction(BaseAction):
         if poll_timeout is None:
             poll_timeout = consts.POLL_TIMEOUT
 
-        self._connector.save_progress(
-            f"Stream connection established. Processing detections (timeout: {poll_timeout / 60:.0f} minutes)..."
-        )
+        self._connector.save_progress(f"Stream connection established. Processing detections (timeout: {poll_timeout / 60:.0f} minutes)...")
 
         stream_state = self._init_stream_state()
 
@@ -434,18 +377,14 @@ class OnPollAction(BaseAction):
                 if self._handle_error_batch(batch):
                     break
 
-                if self._handle_heartbeat_batch(
-                    batch, stream_state, is_poll_now, previous_start_time
-                ):
+                if self._handle_heartbeat_batch(batch, stream_state, is_poll_now, previous_start_time):
                     continue
 
                 # Extract continuation tokens
                 self._extract_continuation_tokens(batch, stream_state)
 
                 # Handle empty batches
-                if self._handle_empty_batch(
-                    batch, stream_state, is_poll_now, previous_start_time
-                ):
+                if self._handle_empty_batch(batch, stream_state, is_poll_now, previous_start_time):
                     continue
 
                 # Process detections
@@ -462,13 +401,9 @@ class OnPollAction(BaseAction):
                     break
 
         except Exception as e:
-            self._handle_stream_error(
-                e, stream_state, is_poll_now, previous_start_time
-            )
+            self._handle_stream_error(e, stream_state, is_poll_now, previous_start_time)
 
-        self._finalize_stream_state(
-            stream_state, is_poll_now, previous_start_time
-        )
+        self._finalize_stream_state(stream_state, is_poll_now, previous_start_time)
 
         return self._build_stream_summary(stream_state)
 
@@ -492,24 +427,17 @@ class OnPollAction(BaseAction):
         """Check if poll timeout has been reached."""
         elapsed_time = time.time() - stream_state["poll_start_time"]
         if elapsed_time >= poll_timeout:
-            self._connector.save_progress(
-                f"Poll timeout reached ({poll_timeout / 60:.0f} minutes). Closing connection gracefully."
-            )
+            self._connector.save_progress(f"Poll timeout reached ({poll_timeout / 60:.0f} minutes). Closing connection gracefully.")
             return True
         return False
 
     def _log_idle_status(self, stream_state):
         """Log idle status periodically when no detections received."""
         current_time = time.time()
-        time_since_last_detection = (
-            current_time - stream_state["last_activity_time"]
-        )
+        time_since_last_detection = current_time - stream_state["last_activity_time"]
         time_since_last_log = current_time - stream_state["last_idle_log_time"]
 
-        if (
-            time_since_last_detection >= stream_state["idle_log_interval"]
-            and time_since_last_log >= stream_state["idle_log_interval"]
-        ):
+        if time_since_last_detection >= stream_state["idle_log_interval"] and time_since_last_log >= stream_state["idle_log_interval"]:
             self._connector.save_progress(
                 f"Waiting for detections... (idle for {int(time_since_last_detection)}s, "
                 f"total detections: {stream_state['detection_count']}, heartbeats: {stream_state['heartbeat_count']})"
@@ -522,32 +450,22 @@ class OnPollAction(BaseAction):
             error_info = batch.get("error", {})
             error_code = error_info.get("code", "unknown")
             error_msg = error_info.get("message", "Unknown error")
-            self._connector.save_progress(
-                f"Received error batch: [{error_code}] {error_msg}"
-            )
+            self._connector.save_progress(f"Received error batch: [{error_code}] {error_msg}")
             return True
         return False
 
-    def _handle_heartbeat_batch(
-        self, batch, stream_state, is_poll_now, previous_start_time
-    ):
+    def _handle_heartbeat_batch(self, batch, stream_state, is_poll_now, previous_start_time):
         """Handle heartbeat batches from the stream."""
         if "heartbeat" in batch:
             stream_state["heartbeat_count"] += 1
-            self._connector.debug_print(
-                f"Received heartbeat #{stream_state['heartbeat_count']}"
-            )
+            self._connector.debug_print(f"Received heartbeat #{stream_state['heartbeat_count']}")
 
             if "nextPageStartTime" in batch:
-                stream_state["last_page_start_time"] = batch[
-                    "nextPageStartTime"
-                ]
+                stream_state["last_page_start_time"] = batch["nextPageStartTime"]
                 # Heartbeat with nextPageStartTime indicates boundary between windows.
                 # Clear any stale page token so next cycle starts from page_start_time.
                 stream_state["last_page_token"] = None
-                self._connector.debug_print(
-                    f"pageStartTime from heartbeat: {stream_state['last_page_start_time']}"
-                )
+                self._connector.debug_print(f"pageStartTime from heartbeat: {stream_state['last_page_start_time']}")
                 if not is_poll_now:
                     self._save_state(
                         page_start_time=stream_state.get("last_page_start_time"),
@@ -564,36 +482,22 @@ class OnPollAction(BaseAction):
 
         if next_page_token:
             stream_state["last_page_token"] = next_page_token
-            self._connector.debug_print(
-                f"Received nextPageToken: {stream_state['last_page_token'][:20]}..."
-            )
+            self._connector.debug_print(f"Received nextPageToken: {stream_state['last_page_token'][:20]}...")
 
         # nextPageStartTime without nextPageToken means end-of-page window.
         # Clear token so the next cycle uses page_start_time.
         if next_page_start_time and not next_page_token:
             stream_state["last_page_start_time"] = next_page_start_time
             stream_state["last_page_token"] = None
-            self._connector.debug_print(
-                f"Received nextPageStartTime: {stream_state['last_page_start_time']}"
-            )
+            self._connector.debug_print(f"Received nextPageStartTime: {stream_state['last_page_start_time']}")
         elif next_page_start_time and next_page_token:
-            self._connector.debug_print(
-                "Received both nextPageToken and nextPageStartTime; "
-                "prioritizing nextPageToken for continuation."
-            )
+            self._connector.debug_print("Received both nextPageToken and nextPageStartTime; prioritizing nextPageToken for continuation.")
 
-    def _handle_empty_batch(
-        self, batch, stream_state, is_poll_now, previous_start_time
-    ):
+    def _handle_empty_batch(self, batch, stream_state, is_poll_now, previous_start_time):
         """Handle batches without detections."""
         if "detections" not in batch:
-            self._connector.debug_print(
-                "Received batch without detections (state update only)"
-            )
-            if not is_poll_now and (
-                stream_state.get("last_page_token")
-                or stream_state.get("last_page_start_time")
-            ):
+            self._connector.debug_print("Received batch without detections (state update only)")
+            if not is_poll_now and (stream_state.get("last_page_token") or stream_state.get("last_page_start_time")):
                 self._save_state(
                     page_token=stream_state.get("last_page_token"),
                     page_start_time=stream_state.get("last_page_start_time"),
@@ -614,9 +518,7 @@ class OnPollAction(BaseAction):
     ):
         """Process detections in a batch."""
         detections_array = batch.get("detections", [])
-        self._connector.debug_print(
-            f"Received batch with {len(detections_array)} detections"
-        )
+        self._connector.debug_print(f"Received batch with {len(detections_array)} detections")
 
         if detections_array:
             stream_state["last_activity_time"] = time.time()
@@ -625,9 +527,7 @@ class OnPollAction(BaseAction):
         for detection_obj in detections_array:
             if not self._is_valid_detection(detection_obj):
                 stream_state["skipped_detections"] += 1
-                self._connector.debug_print(
-                    f"Skipped invalid detection #{stream_state['detection_count'] + stream_state['skipped_detections']}"
-                )
+                self._connector.debug_print(f"Skipped invalid detection #{stream_state['detection_count'] + stream_state['skipped_detections']}")
                 continue
 
             if not self._should_ingest_detection(detection_obj):
@@ -637,23 +537,16 @@ class OnPollAction(BaseAction):
             stream_state["detection_count"] += 1
             batch_detections.append(detection_obj)
 
-            self._connector.save_progress(
-                f"Received detection #{stream_state['detection_count']}"
-            )
+            self._connector.save_progress(f"Received detection #{stream_state['detection_count']}")
 
             if stream_state["detection_count"] >= max_results:
-                self._connector.save_progress(
-                    f"Reached max results limit ({max_results}). Stopping ingestion."
-                )
+                self._connector.save_progress(f"Reached max results limit ({max_results}). Stopping ingestion.")
                 break
 
         if batch_detections:
             self._ingest_batch(batch_detections, max_artifacts, stream_state)
 
-        if not is_poll_now and (
-            stream_state.get("last_page_token")
-            or stream_state.get("last_page_start_time")
-        ):
+        if not is_poll_now and (stream_state.get("last_page_token") or stream_state.get("last_page_start_time")):
             self._save_state(
                 page_token=stream_state.get("last_page_token"),
                 page_start_time=stream_state.get("last_page_start_time"),
@@ -665,45 +558,28 @@ class OnPollAction(BaseAction):
 
     def _ingest_batch(self, batch_detections, max_artifacts, stream_state):
         """Ingest a batch of detections."""
-        self._connector.save_progress(
-            f"Ingesting batch of {len(batch_detections)} detection(s)..."
-        )
+        self._connector.save_progress(f"Ingesting batch of {len(batch_detections)} detection(s)...")
         ret_val = self._ingest_detections(batch_detections, max_artifacts)
 
         if phantom.is_success(ret_val):
             summary = self._action_result.get_summary()
-            stream_state["total_containers_created"] += summary.get(
-                "total_containers_created", 0
-            )
-            stream_state["total_artifacts_created"] += summary.get(
-                "total_artifacts_created", 0
-            )
+            stream_state["total_containers_created"] += summary.get("total_containers_created", 0)
+            stream_state["total_artifacts_created"] += summary.get("total_artifacts_created", 0)
             self._connector.debug_print(
                 f"Batch ingested successfully. Containers: {summary.get('total_containers_created', 0)}, "
                 f"Artifacts: {summary.get('total_artifacts_created', 0)}"
             )
         else:
-            self._connector.debug_print(
-                f"Failed to ingest batch of {len(batch_detections)} detections"
-            )
+            self._connector.debug_print(f"Failed to ingest batch of {len(batch_detections)} detections")
 
-    def _handle_stream_error(
-        self, error, stream_state, is_poll_now, previous_start_time
-    ):
+    def _handle_stream_error(self, error, stream_state, is_poll_now, previous_start_time):
         """Handle errors during stream processing."""
-        error_msg = self._connector.utils._get_error_message_from_exception(
-            error
-        )
+        error_msg = self._connector.utils._get_error_message_from_exception(error)
         self._connector.save_progress(error_msg)
         self._connector.debug_print(error_msg)
 
-        if not is_poll_now and (
-            stream_state.get("last_page_token")
-            or stream_state.get("last_page_start_time")
-        ):
-            self._connector.save_progress(
-                "Saving checkpoint before error recovery..."
-            )
+        if not is_poll_now and (stream_state.get("last_page_token") or stream_state.get("last_page_start_time")):
+            self._connector.save_progress("Saving checkpoint before error recovery...")
             self._save_state(
                 page_token=stream_state.get("last_page_token"),
                 page_start_time=stream_state.get("last_page_start_time"),
@@ -711,14 +587,9 @@ class OnPollAction(BaseAction):
                 previous_start_time=previous_start_time,
             )
 
-    def _finalize_stream_state(
-        self, stream_state, is_poll_now, previous_start_time
-    ):
+    def _finalize_stream_state(self, stream_state, is_poll_now, previous_start_time):
         """Finalize stream state and save checkpoint."""
-        if not is_poll_now and (
-            stream_state.get("last_page_token")
-            or stream_state.get("last_page_start_time")
-        ):
+        if not is_poll_now and (stream_state.get("last_page_token") or stream_state.get("last_page_start_time")):
             self._save_state(
                 page_token=stream_state.get("last_page_token"),
                 page_start_time=stream_state.get("last_page_start_time"),
@@ -736,15 +607,9 @@ class OnPollAction(BaseAction):
         if stream_state["detection_count"] > 0:
             self._action_result.set_summary(
                 {
-                    "total_detections_ingested": stream_state[
-                        "detection_count"
-                    ],
-                    "total_containers_created": stream_state[
-                        "total_containers_created"
-                    ],
-                    "total_artifacts_created": stream_state[
-                        "total_artifacts_created"
-                    ],
+                    "total_detections_ingested": stream_state["detection_count"],
+                    "total_containers_created": stream_state["total_containers_created"],
+                    "total_artifacts_created": stream_state["total_artifacts_created"],
                 }
             )
             return self._action_result.set_status(
@@ -752,11 +617,7 @@ class OnPollAction(BaseAction):
                 f"Successfully ingested {stream_state['detection_count']} detection(s) across {stream_state['total_containers_created']} container(s)",
             )
         else:
-            if (
-                stream_state["heartbeat_count"] == 0
-                and stream_state["detection_count"] == 0
-                and stream_state["skipped_detections"] == 0
-            ):
+            if stream_state["heartbeat_count"] == 0 and stream_state["detection_count"] == 0 and stream_state["skipped_detections"] == 0:
                 self._connector.save_progress("No response from API")
             else:
                 self._connector.save_progress("No detections to ingest")
@@ -768,9 +629,7 @@ class OnPollAction(BaseAction):
                     "total_artifacts_created": 0,
                 }
             )
-            return self._action_result.set_status(
-                phantom.APP_SUCCESS, "No detections found"
-            )
+            return self._action_result.set_status(phantom.APP_SUCCESS, "No detections found")
 
     def _ingest_detections(self, detections, max_artifacts):
         """
@@ -784,9 +643,7 @@ class OnPollAction(BaseAction):
         Returns:
             phantom.APP_SUCCESS/phantom.APP_ERROR
         """
-        self._connector.save_progress(
-            f"Ingesting {len(detections)} detections..."
-        )
+        self._connector.save_progress(f"Ingesting {len(detections)} detections...")
 
         containers_created = 0
         artifacts_created = 0
@@ -799,20 +656,14 @@ class OnPollAction(BaseAction):
         for rule_id, rule_data in detections_by_rule.items():
             rule_name = rule_data["rule_name"]
             rule_detections = rule_data["detections"]
-            self._connector.save_progress(
-                f"Processing {len(rule_detections)} detections for rule: {rule_name}"
-            )
+            self._connector.save_progress(f"Processing {len(rule_detections)} detections for rule: {rule_name}")
 
-            new_containers, new_artifacts = self._process_rule_detections(
-                rule_name, rule_detections, max_artifacts, default_severity
-            )
+            new_containers, new_artifacts = self._process_rule_detections(rule_name, rule_detections, max_artifacts, default_severity)
             containers_created += new_containers
             artifacts_created += new_artifacts
 
         # Set summary
-        self._set_ingestion_summary(
-            len(detections), containers_created, artifacts_created
-        )
+        self._set_ingestion_summary(len(detections), containers_created, artifacts_created)
         return self._action_result.set_status(phantom.APP_SUCCESS)
 
     def _group_detections_by_rule(self, detections):
@@ -839,41 +690,29 @@ class OnPollAction(BaseAction):
                     }
                 )
             except Exception as e:
-                error_msg = (
-                    self._connector.utils._get_error_message_from_exception(e)
-                )
-                self._connector.debug_print(
-                    f"Error grouping detection: {error_msg}"
-                )
+                error_msg = self._connector.utils._get_error_message_from_exception(e)
+                self._connector.debug_print(f"Error grouping detection: {error_msg}")
                 continue
         return detections_by_rule
 
-    def _process_rule_detections(
-        self, rule_name, rule_detections, max_artifacts, default_severity
-    ):
+    def _process_rule_detections(self, rule_name, rule_detections, max_artifacts, default_severity):
         """Process all detections for a single rule."""
         containers_created = 0
         artifacts_created = 0
 
         # Check for existing container
-        existing_container_id, available_space = (
-            self._check_for_existing_container(rule_name, max_artifacts)
-        )
+        existing_container_id, available_space = self._check_for_existing_container(rule_name, max_artifacts)
 
         detections_to_process = rule_detections[:]
 
         # Add to existing container if space available
         if existing_container_id and available_space > 0:
-            artifacts_added = self._add_to_existing_container(
-                existing_container_id, detections_to_process[:available_space]
-            )
+            artifacts_added = self._add_to_existing_container(existing_container_id, detections_to_process[:available_space])
             artifacts_created += artifacts_added
             detections_to_process = detections_to_process[available_space:]
 
         # Create new containers for remaining detections
-        new_containers, new_artifacts = self._create_new_containers(
-            detections_to_process, max_artifacts, default_severity, rule_name
-        )
+        new_containers, new_artifacts = self._create_new_containers(detections_to_process, max_artifacts, default_severity, rule_name)
         containers_created += new_containers
         artifacts_created += new_artifacts
 
@@ -881,15 +720,11 @@ class OnPollAction(BaseAction):
 
     def _add_to_existing_container(self, container_id, detections_for_existing):
         """Add artifacts to an existing container."""
-        self._connector.save_progress(
-            f"Adding {len(detections_for_existing)} artifacts to existing container {container_id}"
-        )
+        self._connector.save_progress(f"Adding {len(detections_for_existing)} artifacts to existing container {container_id}")
 
         artifacts = []
         for det_data in detections_for_existing:
-            artifact = self._create_artifact(
-                det_data["detection"], det_data["detection_details"]
-            )
+            artifact = self._create_artifact(det_data["detection"], det_data["detection_details"])
             if artifact:
                 artifact["container_id"] = container_id
                 artifacts.append(artifact)
@@ -897,20 +732,14 @@ class OnPollAction(BaseAction):
         if artifacts:
             ret_val, message, _ = self._connector.save_artifacts(artifacts)
             if phantom.is_fail(ret_val):
-                self._connector.debug_print(
-                    f"Failed to save artifacts to existing container: {message}"
-                )
+                self._connector.debug_print(f"Failed to save artifacts to existing container: {message}")
                 return 0
             else:
-                self._connector.debug_print(
-                    f"Added {len(artifacts)} artifacts to existing container {container_id}"
-                )
+                self._connector.debug_print(f"Added {len(artifacts)} artifacts to existing container {container_id}")
                 return len(artifacts)
         return 0
 
-    def _create_new_containers(
-        self, detections_to_process, max_artifacts, default_severity, rule_name
-    ):
+    def _create_new_containers(self, detections_to_process, max_artifacts, default_severity, rule_name):
         """Create new containers for detections."""
         containers_created = 0
         artifacts_created = 0
@@ -929,40 +758,28 @@ class OnPollAction(BaseAction):
 
             artifacts = []
             for det_data in detections_for_new_container:
-                artifact = self._create_artifact(
-                    det_data["detection"], det_data["detection_details"]
-                )
+                artifact = self._create_artifact(det_data["detection"], det_data["detection_details"])
                 if artifact:
                     artifacts.append(artifact)
 
             if not artifacts:
-                self._connector.debug_print(
-                    f"No artifacts created for rule {rule_name}, skipping container"
-                )
+                self._connector.debug_print(f"No artifacts created for rule {rule_name}, skipping container")
                 continue
 
             container["artifacts"] = artifacts
-            ret_val, message, container_id = self._connector.save_container(
-                container
-            )
+            ret_val, message, container_id = self._connector.save_container(container)
 
             if phantom.is_fail(ret_val):
-                self._connector.debug_print(
-                    f"Failed to save container for rule {rule_name}: {message}"
-                )
+                self._connector.debug_print(f"Failed to save container for rule {rule_name}: {message}")
                 continue
 
             containers_created += 1
             artifacts_created += len(artifacts)
-            self._connector.debug_print(
-                f"Created container {container_id} with {len(artifacts)} artifacts for rule: {rule_name}"
-            )
+            self._connector.debug_print(f"Created container {container_id} with {len(artifacts)} artifacts for rule: {rule_name}")
 
         return containers_created, artifacts_created
 
-    def _set_ingestion_summary(
-        self, total_detections, containers_created, artifacts_created
-    ):
+    def _set_ingestion_summary(self, total_detections, containers_created, artifacts_created):
         """Set the ingestion summary."""
         summary = {
             "total_detections_ingested": total_detections,
@@ -970,13 +787,9 @@ class OnPollAction(BaseAction):
             "total_artifacts_created": artifacts_created,
         }
         self._action_result.set_summary(summary)
-        self._connector.save_progress(
-            f"Ingestion complete. Containers: {containers_created}, Artifacts: {artifacts_created}"
-        )
+        self._connector.save_progress(f"Ingestion complete. Containers: {containers_created}, Artifacts: {artifacts_created}")
 
-    def _create_container(
-        self, detection, detection_details, default_severity, rule_name=None
-    ):
+    def _create_container(self, detection, detection_details, default_severity, rule_name=None):
         """
         Create a container from detection data with format: 'rule_name: timestamp'.
 
@@ -1007,9 +820,7 @@ class OnPollAction(BaseAction):
             "CRITICAL": "high",
         }
         severity = detection_details.get("severity", "")
-        container_severity = severity_map.get(
-            severity.upper(), default_severity
-        )
+        container_severity = severity_map.get(severity.upper(), default_severity)
 
         # Create container name with format: "rule_name: timestamp"
         timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
@@ -1113,27 +924,19 @@ class OnPollAction(BaseAction):
             # Use _filter_name__contains to search for containers with this rule_name
             url = f'{self._connector.get_phantom_base_url()}rest/container?_filter_name__contains="{rule_name}"&sort=start_time&order=desc'
 
-            self._connector.debug_print(
-                f"Checking for existing container with rule_name: {rule_name}"
-            )
+            self._connector.debug_print(f"Checking for existing container with rule_name: {rule_name}")
 
-            response = requests.get(
-                url, verify=ph_config.platform_strict_tls, timeout=30
-            )
+            response = requests.get(url, verify=ph_config.platform_strict_tls, timeout=30)
 
             if response.status_code != 200:
-                self._connector.debug_print(
-                    f"Failed to query containers: HTTP {response.status_code}"
-                )
+                self._connector.debug_print(f"Failed to query containers: HTTP {response.status_code}")
                 return None, 0
 
             resp_json = response.json()
             containers = resp_json.get("data", [])
 
             if not containers:
-                self._connector.debug_print(
-                    f"No existing container found for rule: {rule_name}"
-                )
+                self._connector.debug_print(f"No existing container found for rule: {rule_name}")
                 return None, 0
 
             # Get the most recent container (first in the sorted list)
@@ -1144,23 +947,15 @@ class OnPollAction(BaseAction):
             available_space = max_artifacts - artifact_count
 
             if available_space <= 0:
-                self._connector.debug_print(
-                    f"Existing container {container_id} is full ({artifact_count}/{max_artifacts} artifacts)"
-                )
+                self._connector.debug_print(f"Existing container {container_id} is full ({artifact_count}/{max_artifacts} artifacts)")
                 return None, 0
 
-            self._connector.debug_print(
-                f"Found existing container {container_id} with {available_space} available slots"
-            )
+            self._connector.debug_print(f"Found existing container {container_id} with {available_space} available slots")
             return container_id, available_space
 
         except Exception as e:
-            error_msg = self._connector.utils._get_error_message_from_exception(
-                e
-            )
-            self._connector.debug_print(
-                f"Error checking for existing container: {error_msg}"
-            )
+            error_msg = self._connector.utils._get_error_message_from_exception(e)
+            self._connector.debug_print(f"Error checking for existing container: {error_msg}")
             return None, 0
 
     def _is_valid_detection(self, detection_obj):
@@ -1217,56 +1012,32 @@ class OnPollAction(BaseAction):
             rule_id = detection_details.get("ruleId", "")
 
             # Debug: Log rule ID and name for filtering
-            self._connector.debug_print(
-                f"Checking detection - Rule ID: '{rule_id}', Rule Name: '{rule_name}'"
-            )
+            self._connector.debug_print(f"Checking detection - Rule ID: '{rule_id}', Rule Name: '{rule_name}'")
 
             # Priority 1: Check rule_name filters first
             # If filter_exclude_rule_names is True and rule name is in the filter list, skip it
-            if (
-                self._excluded_rule_names
-                and rule_name in self._excluded_rule_names
-            ):
-                self._connector.debug_print(
-                    f"Skipping detection with excluded rule name: {rule_name}"
-                )
+            if self._excluded_rule_names and rule_name in self._excluded_rule_names:
+                self._connector.debug_print(f"Skipping detection with excluded rule name: {rule_name}")
                 return False
 
             # If filter_exclude_rule_names is False and rule name is not in the filter list, skip it
-            if (
-                self._included_rule_names
-                and rule_name not in self._included_rule_names
-            ):
-                self._connector.debug_print(
-                    f"Skipping detection with non-included rule name: {rule_name}"
-                )
+            if self._included_rule_names and rule_name not in self._included_rule_names:
+                self._connector.debug_print(f"Skipping detection with non-included rule name: {rule_name}")
                 return False
 
             if self._excluded_rule_ids and rule_id in self._excluded_rule_ids:
-                self._connector.debug_print(
-                    f"Skipping detection with excluded rule ID: {rule_id}"
-                )
+                self._connector.debug_print(f"Skipping detection with excluded rule ID: {rule_id}")
                 return False
 
-            if (
-                hasattr(self, "_included_rule_ids")
-                and self._included_rule_ids
-                and rule_id not in self._included_rule_ids
-            ):
-                self._connector.debug_print(
-                    f"Skipping detection with non-included rule ID: {rule_id}"
-                )
+            if hasattr(self, "_included_rule_ids") and self._included_rule_ids and rule_id not in self._included_rule_ids:
+                self._connector.debug_print(f"Skipping detection with non-included rule ID: {rule_id}")
                 return False
 
             return True
 
         except Exception as e:
-            error_msg = self._connector.utils._get_error_message_from_exception(
-                e
-            )
-            self._connector.debug_print(
-                f"Error checking detection filters: {error_msg}. Including detection."
-            )
+            error_msg = self._connector.utils._get_error_message_from_exception(e)
+            self._connector.debug_print(f"Error checking detection filters: {error_msg}. Including detection.")
             return True
 
     def _save_state(
@@ -1303,28 +1074,20 @@ class OnPollAction(BaseAction):
             if state.get("page_token") != page_token:
                 state["page_token"] = page_token
                 state_updated = True
-                self._connector.debug_print(
-                    f"Saved checkpoint: pageToken={page_token[:20]}..."
-                )
+                self._connector.debug_print(f"Saved checkpoint: pageToken={page_token[:20]}...")
         elif page_start_time:
             if "page_token" in state:
                 state.pop("page_token", None)
                 state_updated = True
-                self._connector.debug_print(
-                    "Cleared pageToken because nextPageStartTime was received."
-                )
+                self._connector.debug_print("Cleared pageToken because nextPageStartTime was received.")
 
             current_start_time = state.get("page_start_time")
             if page_start_time != current_start_time:
                 state["page_start_time"] = page_start_time
                 state_updated = True
-                self._connector.debug_print(
-                    f"Saved checkpoint: pageStartTime={page_start_time} (changed from {current_start_time})"
-                )
+                self._connector.debug_print(f"Saved checkpoint: pageStartTime={page_start_time} (changed from {current_start_time})")
             else:
-                self._connector.debug_print(
-                    f"Skipping pageStartTime update: unchanged ({page_start_time})"
-                )
+                self._connector.debug_print(f"Skipping pageStartTime update: unchanged ({page_start_time})")
 
         # Only save state if something was updated
         if state_updated:

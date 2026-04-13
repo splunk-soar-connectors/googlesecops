@@ -39,7 +39,6 @@ class GoogleSecOpsUtils:
     def __init__(self, connector=None):
         self._connector = connector
 
-
     _JWT_ALLOWED_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
     _JWT_SCAN_CHARS = _JWT_ALLOWED_CHARS.union({"."})
 
@@ -164,7 +163,6 @@ class GoogleSecOpsUtils:
             return sanitized
 
         return value
-
 
     @staticmethod
     def _is_redacted_placeholder(value):

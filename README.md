@@ -3,10 +3,10 @@
 Publisher: Google <br>
 Connector Version: 1.0.0 <br>
 Product Vendor: Google <br>
-Product Name: Google <br>
+Product Name: SecOps <br>
 Minimum Product Version: 7.1.0.225
 
-This app integrates Google SecOps with Splunk SOAR to enable security operations teams to ingest detections and events, it supports automated polling of security detections with configurable rule filters and retrieval of asset-based events, with flexible time range options, the app leverages Google SecOps API to provide real-time threat detection ingestion and historical security data analysis capabilities
+This app integrates Google SecOps with Splunk SOAR to enable security operations teams to ingest detections alerts, it supports automated polling of security detections with configurable rule filters and retrieval of asset-based events, with flexible time range options, the app leverages Google SecOps API to provide real-time threat detection ingestion and historical security data analysis capabilities
 
 ### Steps to Obtain the Service Account JSON
 
@@ -34,7 +34,7 @@ This app integrates Google SecOps with Splunk SOAR to enable security operations
 
 ### Configuration variables
 
-This table lists the configuration variables required to operate Google SecOps. These variables are specified when configuring a Google asset in Splunk SOAR.
+This table lists the configuration variables required to operate Google SecOps. These variables are specified when configuring a SecOps asset in Splunk SOAR.
 
 VARIABLE | REQUIRED | TYPE | DESCRIPTION
 -------- | -------- | ---- | -----------

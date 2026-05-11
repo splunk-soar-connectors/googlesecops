@@ -1947,14 +1947,14 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.entity.ipGeoArtifact.*.location.city",
                     "data_type": "string",
                     "example_values": [
-                        "Timi\u015foara"
+                        "Timisoara"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.entity.ipGeoArtifact.*.location.state",
                     "data_type": "string",
                     "example_values": [
-                        "Timi\u0219 County"
+                        "Timis County"
                     ]
                 },
                 {
@@ -2531,7 +2531,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_2",
                     "data_type": "string",
                     "example_values": [
-                        "San Sebasti\u00e1n de los Reyes"
+                        "San Sebastian de los Reyes"
                     ]
                 },
                 {
@@ -2573,7 +2573,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_8",
                     "data_type": "string",
                     "example_values": [
-                        "General L\u00e1zaro C\u00e1rdenas"
+                        "General Lazaro Cardenas"
                     ]
                 },
                 {
@@ -2598,7 +2598,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_11",
                     "data_type": "string",
                     "example_values": [
-                        "S\u00e3o Paulo"
+                        "Paulo"
                     ]
                 },
                 {
@@ -2710,7 +2710,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_27",
                     "data_type": "string",
                     "example_values": [
-                        "B\u0101shettihalli"
+                        "Bashettihalli"
                     ]
                 },
                 {
@@ -2787,7 +2787,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_38",
                     "data_type": "string",
                     "example_values": [
-                        "Montr\u00e9al"
+                        "Montrial"
                     ]
                 },
                 {
@@ -2857,7 +2857,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_48",
                     "data_type": "string",
                     "example_values": [
-                        "Z\u00fcrich"
+                        "Zurich"
                     ]
                 },
                 {
@@ -2913,7 +2913,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_56",
                     "data_type": "string",
                     "example_values": [
-                        "\u014ci"
+                        "Test"
                     ]
                 },
                 {
@@ -2955,7 +2955,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_62",
                     "data_type": "string",
                     "example_values": [
-                        "D\u0101r Kulayb"
+                        "Kulayb"
                     ]
                 },
                 {
@@ -2997,7 +2997,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_68",
                     "data_type": "string",
                     "example_values": [
-                        "Santiago de Quer\u00e9taro"
+                        "Santiago"
                     ]
                 },
                 {
@@ -3102,7 +3102,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_83",
                     "data_type": "string",
                     "example_values": [
-                        "Rosh Ha\u2018Ayin"
+                        "Test"
                     ]
                 },
                 {
@@ -3123,7 +3123,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_86",
                     "data_type": "string",
                     "example_values": [
-                        "Peta\u1e96 Tiqva"
+                        "Petah Tiqva"
                     ]
                 },
                 {
@@ -3333,7 +3333,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_114",
                     "data_type": "string",
                     "example_values": [
-                        "M\u00e1laga"
+                        "Malaga"
                     ]
                 },
                 {
@@ -3424,7 +3424,7 @@
                     "data_path": "action_result.data.*.collectionElements.*.references.*.entity.additional.destination_cities_127",
                     "data_type": "string",
                     "example_values": [
-                        "Reykjav\u00edk"
+                        "Reykjavik"
                     ]
                 },
                 {

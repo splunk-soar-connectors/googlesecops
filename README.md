@@ -363,8 +363,8 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArt
 action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.network.asn | string | | AS47890 |
 action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.network.dnsDomain | string | | unmanaged.uk |
 action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.network.organizationName | string | | UNMANAGED LTD |
-action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.city | string | | Timişoara |
-action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.state | string | | Timiș County |
+action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.city | string | | Timisoara |
+action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.state | string | | Timis County |
 action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.countryOrRegion | string | | Romania |
 action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.regionCoordinates.latitude | numeric | | 45.7537 |
 action_result.data.\*.collectionElements.\*.references.\*.entity.entity.ipGeoArtifact.\*.location.regionCoordinates.longitude | numeric | | 21.2257 |
@@ -448,17 +448,17 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.source_country_code | string | | RO |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_0 | string | | Washington |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_1 | string | | New Orleans |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_2 | string | | San Sebastián de los Reyes |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_2 | string | | San Sebastian de los Reyes |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_3 | string | | Federal Way |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_4 | string | | Englewood |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_5 | string | | Frankfurt am Main |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_6 | string | | Singapore |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_7 | string | | Columbus |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_8 | string | | General Lázaro Cárdenas |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_8 | string | | General Lazaro Cardenas |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_9 | string | | London |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.business_service_name | string | | |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_10 | string | | Sydney |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_11 | string | | São Paulo |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_11 | string | | Paulo |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_12 | string | | Mumbai |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_13 | string | | Santa Clara |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_14 | string | | Toronto |
@@ -474,7 +474,7 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_24 | string | | Las Vegas |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_25 | string | | Los Angeles |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_26 | string | | Council Bluffs |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_27 | string | | Bāshettihalli |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_27 | string | | Bashettihalli |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_28 | string | | The Dalles |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_29 | string | | Chennai |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_30 | string | | Atlanta |
@@ -485,7 +485,7 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_35 | string | | Fremont |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_36 | string | | Cedar Knolls |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_37 | string | | Stockholm |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_38 | string | | Montréal |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_38 | string | | Montrial |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_39 | string | | Milan |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_40 | string | | Cheyenne |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_41 | string | | San Jose |
@@ -495,7 +495,7 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_45 | string | | Kyiv |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_46 | string | | New York City |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_47 | string | | Brussels |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_48 | string | | Zürich |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_48 | string | | Zurich |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_49 | string | | Incheon |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_50 | string | | Groningen |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_51 | string | | Taipei |
@@ -503,19 +503,19 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_53 | string | | Lima |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_54 | string | | Virginia Beach |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_55 | string | | Dublin |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_56 | string | | Ōi |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_56 | string | | Test |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_57 | string | | Aubervilliers |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_58 | string | | Kent |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_59 | string | | Kuala Lumpur |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_60 | string | | Lappeenranta |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_61 | string | | Piscataway |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_62 | string | | Dār Kulayb |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_62 | string | | Kulayb |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_63 | string | | Elk Grove Village |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_64 | string | | Rawalpindi |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_65 | string | | Miami |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_66 | string | | Osaka |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_67 | string | | Dallas |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_68 | string | | Santiago de Querétaro |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_68 | string | | Santiago |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_69 | string | | Warsaw |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_70 | string | | Haarlem |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_71 | string | | Doha |
@@ -530,10 +530,10 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_80 | string | | Tel Aviv |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_81 | string | | Ljubljana |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_82 | string | | Nashville |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_83 | string | | Rosh Ha‘Ayin |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_83 | string | | Test |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_84 | string | | Budapest |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_85 | string | | St. Louis |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_86 | string | | Petaẖ Tiqva |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_86 | string | | Petah Tiqva |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_87 | string | | Auckland |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_88 | string | | Santiago |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_89 | string | | Zagreb |
@@ -563,7 +563,7 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_111 | string | | Al Fujairah City |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_112 | string | | Bexley |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_113 | string | | Muscat |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_114 | string | | Málaga |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_114 | string | | Malaga |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_115 | string | | San Miguelito |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_116 | string | | Accra |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_117 | string | | Haifa |
@@ -576,7 +576,7 @@ action_result.data.\*.collectionElements.\*.references.\*.entity.additional.dest
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_124 | string | | Lagos |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_125 | string | | Meppel |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_126 | string | | Laval |
-action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_127 | string | | Reykjavík |
+action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_127 | string | | Reykjavik |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_128 | string | | Bratislava |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_129 | string | | Strasbourg |
 action_result.data.\*.collectionElements.\*.references.\*.entity.additional.destination_cities_130 | string | | Calais |

@@ -886,16 +886,11 @@ Callback action for the on_poll ingest functionality
 Type: **ingest** <br>
 Read only: **True**
 
-Return the detections for the specified version of a rule, the latest version of a rule, all versions of a rule, or all versions of all rules.
+Return the detections for the specified rules.
 
 #### Action Parameters
 
-PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
---------- | -------- | ----------- | ---- | --------
-**start_time** | optional | Parameter ignored in this app | numeric | |
-**end_time** | optional | Parameter ignored in this app | numeric | |
-**container_count** | optional | Parameter ignored in this app | numeric | |
-**artifact_count** | optional | Parameter ignored in this app | numeric | |
+No parameters are required for this action
 
 #### Action Output
 

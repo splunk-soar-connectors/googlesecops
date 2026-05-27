@@ -658,7 +658,7 @@ class OnPollAction(BaseAction):
             rule_detections = rule_data["detections"]
             self._connector.save_progress(f"Processing {len(rule_detections)} detections for rule: {rule_name}")
 
-            new_containers, new_artifacts = self._process_rule_detections(rule_name, rule_detections, max_artifacts, default_severity)
+            new_containers, new_artifacts = self._process_rule_detections(rule_id, rule_name, rule_detections, max_artifacts, default_severity)
             containers_created += new_containers
             artifacts_created += new_artifacts
 
@@ -695,13 +695,13 @@ class OnPollAction(BaseAction):
                 continue
         return detections_by_rule
 
-    def _process_rule_detections(self, rule_name, rule_detections, max_artifacts, default_severity):
+    def _process_rule_detections(self, rule_id, rule_name, rule_detections, max_artifacts, default_severity):
         """Process all detections for a single rule."""
         containers_created = 0
         artifacts_created = 0
 
         # Check for existing container
-        existing_container_id, available_space = self._check_for_existing_container(rule_name, max_artifacts)
+        existing_container_id, available_space = self._check_for_existing_container(rule_id, max_artifacts)
 
         detections_to_process = rule_detections[:]
 
@@ -909,22 +909,22 @@ class OnPollAction(BaseAction):
 
         return artifact
 
-    def _check_for_existing_container(self, rule_name, max_artifacts):
+    def _check_for_existing_container(self, rule_id, max_artifacts):
         """
-        Check for existing container with the given rule_name and return container ID and available space.
+        Check for existing container with the given rule_id and return container ID and available space.
 
         Args:
-            rule_name: Rule name to search for
+            rule_id: Rule ID to search for
             max_artifacts: Maximum artifacts per container
 
         Returns:
             tuple: (container_id, available_space) or (None, 0) if not found
         """
         try:
-            # Use _filter_name__contains to search for containers with this rule_name
-            url = f'{self._connector.get_phantom_base_url()}rest/container?_filter_name__contains="{rule_name}"&sort=start_time&order=desc'
+            # Use _filter_name__contains to search for containers with this rule_id
+            url = f'{self._connector.get_phantom_base_url()}rest/container?_filter_source_data_identifier__contains="{rule_id}"&sort=create_time&order=desc'
 
-            self._connector.debug_print(f"Checking for existing container with rule_name: {rule_name}")
+            self._connector.debug_print(f"Checking for existing container with rule_id: {rule_id}")
 
             response = requests.get(url, verify=ph_config.platform_strict_tls, timeout=30)
 
@@ -936,7 +936,7 @@ class OnPollAction(BaseAction):
             containers = resp_json.get("data", [])
 
             if not containers:
-                self._connector.debug_print(f"No existing container found for rule: {rule_name}")
+                self._connector.debug_print(f"No existing container found for rule: {rule_id}")
                 return None, 0
 
             # Get the most recent container (first in the sorted list)

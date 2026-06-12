@@ -18,8 +18,6 @@ import time
 from datetime import UTC, datetime, timedelta
 
 import phantom.app as phantom
-import requests
-from phantom.utils import config as ph_config
 
 import googlesecops_consts as consts
 from actions import BaseAction  # pylint: disable=import-error,no-name-in-module
@@ -45,7 +43,6 @@ class OnPollAction(BaseAction):
 
         ret_val = self._start_streaming_ingestion(
             poll_config["max_results"],
-            poll_config["max_artifacts"],
             poll_config["is_poll_now"],
             poll_config["poll_timeout"],
         )
@@ -58,7 +55,6 @@ class OnPollAction(BaseAction):
     def _get_poll_configuration(self):
         """Get poll configuration based on poll type."""
         is_poll_now = self._connector.is_poll_now()
-        max_artifacts = self._connector.client.max_artifacts
 
         if is_poll_now:
             self._connector.save_progress("Running POLL NOW (20 minute timeout)")
@@ -68,19 +64,17 @@ class OnPollAction(BaseAction):
             max_results = self._connector.client.max_results_scheduled_poll
         poll_timeout = consts.POLL_TIMEOUT
 
-        self._connector.save_progress(f"Max results: {max_results}, Max artifacts: {max_artifacts}")
+        self._connector.save_progress(f"Max results: {max_results}")
 
         return {
             "is_poll_now": is_poll_now,
             "max_results": max_results,
-            "max_artifacts": max_artifacts,
             "poll_timeout": poll_timeout,
         }
 
     def _start_streaming_ingestion(
         self,
         max_results,
-        max_artifacts,
         is_poll_now,
         poll_timeout,
     ):
@@ -88,9 +82,7 @@ class OnPollAction(BaseAction):
         Start streaming connection and ingest detections.
 
         Args:
-            config: Configuration dictionary
             max_results: Maximum number of detections to ingest
-            max_artifacts: Maximum artifacts per container
             is_poll_now: Whether this is a POLL NOW run
             poll_timeout: Maximum time in seconds for this poll (20 min for poll_now, 50 min for scheduled)
 
@@ -116,7 +108,6 @@ class OnPollAction(BaseAction):
             stream_url,
             request_body,
             max_results,
-            max_artifacts,
             is_poll_now,
             previous_start_time,
             poll_timeout,
@@ -245,7 +236,6 @@ class OnPollAction(BaseAction):
         stream_url,
         request_body,
         max_results,
-        max_artifacts,
         is_poll_now,
         previous_start_time,
         poll_timeout,
@@ -264,7 +254,6 @@ class OnPollAction(BaseAction):
                 return self._process_stream(
                     response,
                     max_results,
-                    max_artifacts,
                     is_poll_now,
                     previous_start_time,
                     poll_timeout,
@@ -337,7 +326,6 @@ class OnPollAction(BaseAction):
         self,
         response,
         max_results,
-        max_artifacts,
         is_poll_now,
         previous_start_time=None,
         poll_timeout=None,
@@ -349,7 +337,6 @@ class OnPollAction(BaseAction):
         Args:
             response: Streaming HTTP response object
             max_results: Maximum detections to process
-            max_artifacts: Maximum artifacts per container
             is_poll_now: Whether this is POLL NOW
             previous_start_time: Initial start_time from state for comparison
             poll_timeout: Maximum time in seconds for this poll
@@ -392,7 +379,6 @@ class OnPollAction(BaseAction):
                     batch,
                     stream_state,
                     max_results,
-                    max_artifacts,
                     is_poll_now,
                     previous_start_time,
                 )
@@ -512,7 +498,6 @@ class OnPollAction(BaseAction):
         batch,
         stream_state,
         max_results,
-        max_artifacts,
         is_poll_now,
         previous_start_time,
     ):
@@ -544,7 +529,7 @@ class OnPollAction(BaseAction):
                 break
 
         if batch_detections:
-            self._ingest_batch(batch_detections, max_artifacts, stream_state)
+            self._ingest_batch(batch_detections, stream_state)
 
         if not is_poll_now and (stream_state.get("last_page_token") or stream_state.get("last_page_start_time")):
             self._save_state(
@@ -556,10 +541,10 @@ class OnPollAction(BaseAction):
 
         return stream_state["detection_count"] >= max_results
 
-    def _ingest_batch(self, batch_detections, max_artifacts, stream_state):
+    def _ingest_batch(self, batch_detections, stream_state):
         """Ingest a batch of detections."""
         self._connector.save_progress(f"Ingesting batch of {len(batch_detections)} detection(s)...")
-        ret_val = self._ingest_detections(batch_detections, max_artifacts)
+        ret_val = self._ingest_detections(batch_detections)
 
         if phantom.is_success(ret_val):
             summary = self._action_result.get_summary()
@@ -631,14 +616,13 @@ class OnPollAction(BaseAction):
             )
             return self._action_result.set_status(phantom.APP_SUCCESS, "No detections found")
 
-    def _ingest_detections(self, detections, max_artifacts):
+    def _ingest_detections(self, detections):
         """
         Ingest detections as Splunk SOAR containers and artifacts.
-        Groups detections by rule_name and distributes artifacts across containers.
+        Creates a separate container for each detection.
 
         Args:
             detections: List of detection objects to ingest
-            max_artifacts: Maximum artifacts per container
 
         Returns:
             phantom.APP_SUCCESS/phantom.APP_ERROR
@@ -649,135 +633,33 @@ class OnPollAction(BaseAction):
         artifacts_created = 0
         default_severity = self._connector.client.default_severity
 
-        # Group detections by rule_id
-        detections_by_rule = self._group_detections_by_rule(detections)
-
-        # Process each rule_id group
-        for rule_id, rule_data in detections_by_rule.items():
-            rule_name = rule_data["rule_name"]
-            rule_detections = rule_data["detections"]
-            self._connector.save_progress(f"Processing {len(rule_detections)} detections for rule: {rule_name}")
-
-            new_containers, new_artifacts = self._process_rule_detections(rule_id, rule_name, rule_detections, max_artifacts, default_severity)
-            containers_created += new_containers
-            artifacts_created += new_artifacts
-
-        # Set summary
-        self._set_ingestion_summary(len(detections), containers_created, artifacts_created)
-        return self._action_result.set_status(phantom.APP_SUCCESS)
-
-    def _group_detections_by_rule(self, detections):
-        """Group detections by rule_id for uniqueness."""
-        detections_by_rule = {}
         for detection_data in detections:
             try:
-                detection = detection_data.get("detection", [])
-                detection_details = detection[0] if detection else {}
+                container = self._create_container(detection_data, default_severity)
+                artifact = self._create_artifact(detection_data, default_severity)
 
-                rule_id = detection_details.get("ruleId", "")
-                rule_name = detection_details.get("ruleName", "Unknown Rule")
+                if not artifact:
+                    self._connector.debug_print("No artifact created for detection, skipping container")
+                    continue
 
-                if rule_id not in detections_by_rule:
-                    detections_by_rule[rule_id] = {
-                        "rule_name": rule_name,
-                        "detections": [],
-                    }
+                container["artifacts"] = [artifact]
+                ret_val, message, container_id = self._connector.save_container(container)
 
-                detections_by_rule[rule_id]["detections"].append(
-                    {
-                        "detection": detection_data,
-                        "detection_details": detection_details,
-                    }
-                )
+                if phantom.is_fail(ret_val):
+                    self._connector.debug_print(f"Failed to save container for detection: {message}")
+                    continue
+
+                containers_created += 1
+                artifacts_created += 1
+                self._connector.debug_print(f"Created container {container_id} for detection: {container['source_data_identifier']}")
+
             except Exception as e:
                 error_msg = self._connector.utils._get_error_message_from_exception(e)
-                self._connector.debug_print(f"Error grouping detection: {error_msg}")
-                continue
-        return detections_by_rule
-
-    def _process_rule_detections(self, rule_id, rule_name, rule_detections, max_artifacts, default_severity):
-        """Process all detections for a single rule."""
-        containers_created = 0
-        artifacts_created = 0
-
-        # Check for existing container
-        existing_container_id, available_space = self._check_for_existing_container(rule_id, max_artifacts)
-
-        detections_to_process = rule_detections[:]
-
-        # Add to existing container if space available
-        if existing_container_id and available_space > 0:
-            artifacts_added = self._add_to_existing_container(existing_container_id, detections_to_process[:available_space])
-            artifacts_created += artifacts_added
-            detections_to_process = detections_to_process[available_space:]
-
-        # Create new containers for remaining detections
-        new_containers, new_artifacts = self._create_new_containers(detections_to_process, max_artifacts, default_severity, rule_name)
-        containers_created += new_containers
-        artifacts_created += new_artifacts
-
-        return containers_created, artifacts_created
-
-    def _add_to_existing_container(self, container_id, detections_for_existing):
-        """Add artifacts to an existing container."""
-        self._connector.save_progress(f"Adding {len(detections_for_existing)} artifacts to existing container {container_id}")
-
-        artifacts = []
-        for det_data in detections_for_existing:
-            artifact = self._create_artifact(det_data["detection"], det_data["detection_details"])
-            if artifact:
-                artifact["container_id"] = container_id
-                artifacts.append(artifact)
-
-        if artifacts:
-            ret_val, message, _ = self._connector.save_artifacts(artifacts)
-            if phantom.is_fail(ret_val):
-                self._connector.debug_print(f"Failed to save artifacts to existing container: {message}")
-                return 0
-            else:
-                self._connector.debug_print(f"Added {len(artifacts)} artifacts to existing container {container_id}")
-                return len(artifacts)
-        return 0
-
-    def _create_new_containers(self, detections_to_process, max_artifacts, default_severity, rule_name):
-        """Create new containers for detections."""
-        containers_created = 0
-        artifacts_created = 0
-
-        while detections_to_process:
-            detections_for_new_container = detections_to_process[:max_artifacts]
-            detections_to_process = detections_to_process[max_artifacts:]
-
-            first_detection = detections_for_new_container[0]
-            container = self._create_container(
-                first_detection["detection"],
-                first_detection["detection_details"],
-                default_severity,
-                rule_name,
-            )
-
-            artifacts = []
-            for det_data in detections_for_new_container:
-                artifact = self._create_artifact(det_data["detection"], det_data["detection_details"])
-                if artifact:
-                    artifacts.append(artifact)
-
-            if not artifacts:
-                self._connector.debug_print(f"No artifacts created for rule {rule_name}, skipping container")
+                self._connector.debug_print(f"Error ingesting detection: {error_msg}")
                 continue
 
-            container["artifacts"] = artifacts
-            ret_val, message, container_id = self._connector.save_container(container)
-
-            if phantom.is_fail(ret_val):
-                self._connector.debug_print(f"Failed to save container for rule {rule_name}: {message}")
-                continue
-
-            containers_created += 1
-            artifacts_created += len(artifacts)
-            self._connector.debug_print(f"Created container {container_id} with {len(artifacts)} artifacts for rule: {rule_name}")
-
-        return containers_created, artifacts_created
+        self._set_ingestion_summary(len(detections), containers_created, artifacts_created)
+        return self._action_result.set_status(phantom.APP_SUCCESS)
 
     def _set_ingestion_summary(self, total_detections, containers_created, artifacts_created):
         """Set the ingestion summary."""
@@ -789,9 +671,9 @@ class OnPollAction(BaseAction):
         self._action_result.set_summary(summary)
         self._connector.save_progress(f"Ingestion complete. Containers: {containers_created}, Artifacts: {artifacts_created}")
 
-    def _create_container(self, detection, detection_details, default_severity, rule_name=None):
+    def _create_container(self, detection, default_severity):
         """
-        Create a container from detection data with format: 'rule_name: timestamp'.
+        Create a container from detection data with format: 'rule_name: detection_id'.
 
         Args:
             detection: Detection object
@@ -802,14 +684,14 @@ class OnPollAction(BaseAction):
         Returns:
             dict: Container dictionary
         """
-        from datetime import datetime
-
+        detection_data = detection.get("detection", {})
+        detection_details = detection_data[0] if detection_data and isinstance(detection_data, list) else {}
         rule_id = detection_details.get("ruleId", "unknown")
-        if not rule_name:
-            rule_name = detection_details.get("ruleName", "Unknown Rule")
+        rule_name = detection_details.get("ruleName", "Unknown Rule")
         alert_state = detection_details.get("alertState", "UNKNOWN")
         detection_time = detection.get("detectionTime", "")
         rule_type = detection.get("type", "")
+        detection_id = detection.get("id", "unknown")
 
         # Map severity: informational/low->low, medium->medium, high/critical->high
         severity_map = {
@@ -822,22 +704,17 @@ class OnPollAction(BaseAction):
         severity = detection_details.get("severity", "")
         container_severity = severity_map.get(severity.upper(), default_severity)
 
-        # Create container name with format: "rule_name: timestamp"
-        timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
-        container_name = f"{rule_name}: {timestamp}"
-
         container = {
-            "name": container_name,
+            "name": f"{rule_name}: {detection_id}",
             "description": f"Rule ID: {rule_id}, Rule Type: {rule_type}, Alert State: {alert_state}",
-            "source_data_identifier": f"{rule_id}_{timestamp}",
+            "source_data_identifier": detection_id,
             "severity": container_severity,
             "start_time": detection_time,
-            "data": detection,
         }
 
         return container
 
-    def _create_artifact(self, detection, detection_details):
+    def _create_artifact(self, detection, default_severity):
         """
         Create a single artifact from detection data with proper CEF keys.
 
@@ -849,6 +726,8 @@ class OnPollAction(BaseAction):
             dict: Artifact dictionary
         """
         # Extract time window information
+        detection_data = detection.get("detection", {})
+        detection_details = detection_data[0] if detection_data and isinstance(detection_data, list) else {}
         time_window = detection_details.get("timeWindow", {})
         time_window_start_time = time_window.get("startTime", "")
         time_window_end_time = time_window.get("endTime", "")
@@ -862,7 +741,7 @@ class OnPollAction(BaseAction):
             "CRITICAL": "high",
         }
         severity = detection_details.get("severity", "")
-        artifact_severity = severity_map.get(severity.upper(), "medium")
+        artifact_severity = severity_map.get(severity.upper(), default_severity)
 
         # Create artifact with required CEF keys
         cef_fields = {
@@ -904,59 +783,10 @@ class OnPollAction(BaseAction):
             "severity": artifact_severity,
             "cef": cef_fields,
             "source_data_identifier": f"{detection.get('id')}",
-            "data": detection_details,
+            "data": detection,
         }
 
         return artifact
-
-    def _check_for_existing_container(self, rule_id, max_artifacts):
-        """
-        Check for existing container with the given rule_id and return container ID and available space.
-
-        Args:
-            rule_id: Rule ID to search for
-            max_artifacts: Maximum artifacts per container
-
-        Returns:
-            tuple: (container_id, available_space) or (None, 0) if not found
-        """
-        try:
-            # Use _filter_name__contains to search for containers with this rule_id
-            url = f'{self._connector.get_phantom_base_url()}rest/container?_filter_source_data_identifier__contains="{rule_id}"&sort=create_time&order=desc'
-
-            self._connector.debug_print(f"Checking for existing container with rule_id: {rule_id}")
-
-            response = requests.get(url, verify=ph_config.platform_strict_tls, timeout=30)
-
-            if response.status_code != 200:
-                self._connector.debug_print(f"Failed to query containers: HTTP {response.status_code}")
-                return None, 0
-
-            resp_json = response.json()
-            containers = resp_json.get("data", [])
-
-            if not containers:
-                self._connector.debug_print(f"No existing container found for rule: {rule_id}")
-                return None, 0
-
-            # Get the most recent container (first in the sorted list)
-            container = containers[0]
-            container_id = container.get("id")
-            artifact_count = container.get("artifact_count", 0)
-
-            available_space = max_artifacts - artifact_count
-
-            if available_space <= 0:
-                self._connector.debug_print(f"Existing container {container_id} is full ({artifact_count}/{max_artifacts} artifacts)")
-                return None, 0
-
-            self._connector.debug_print(f"Found existing container {container_id} with {available_space} available slots")
-            return container_id, available_space
-
-        except Exception as e:
-            error_msg = self._connector.utils._get_error_message_from_exception(e)
-            self._connector.debug_print(f"Error checking for existing container: {error_msg}")
-            return None, 0
 
     def _is_valid_detection(self, detection_obj):
         """

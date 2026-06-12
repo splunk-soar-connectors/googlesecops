@@ -157,14 +157,6 @@
             "order": 14,
             "name": "max_results_poll_now",
             "id": 14
-        },
-        "max_artifacts": {
-            "description": "Maximum number of artifacts allowed in a single container, when limit is reached, a new container is created for the same rule, must be a positive integer, default: 1000",
-            "data_type": "numeric",
-            "default": 1000,
-            "order": 15,
-            "name": "max_artifacts",
-            "id": 15
         }
     },
     "actions": [

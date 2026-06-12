@@ -53,7 +53,6 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **exclude_rule_names** | optional | boolean | If enabled, detections matching the rule names specified in rule_names_for_ingestion will be excluded from ingestion instead of included |
 **max_results_scheduled_poll** | optional | numeric | Maximum number of detections to ingest during scheduled/interval polling, must be a positive integer, default: 10000 |
 **max_results_poll_now** | optional | numeric | Maximum number of detections to ingest during POLL NOW action, must be a positive integer, default: 10000 |
-**max_artifacts** | optional | numeric | Maximum number of artifacts allowed in a single container, when limit is reached, a new container is created for the same rule, must be a positive integer, default: 1000 |
 
 ### Supported Actions
 

@@ -110,7 +110,7 @@ class GoogleSecOpsClient:
 
         # Validate severity
         default_severity = config.get("default_severity", "").strip()
-        self.default_severity = default_severity if default_severity else "high"
+        self.default_severity = default_severity if default_severity else "medium"
 
         # Validate rule filters
         self._validate_rule_filters(config)
@@ -208,7 +208,6 @@ class GoogleSecOpsClient:
                 consts.DEFAULT_MAX_RESULTS_SCHEDULED_POLL,
             ),
             "max_results_poll_now": config.get("max_results_poll_now", consts.DEFAULT_MAX_RESULTS_POLL_NOW),
-            "max_artifacts": config.get("max_artifacts", consts.DEFAULT_MAX_ARTIFACTS),
         }
 
         for param_name, param_value in numeric_params.items():

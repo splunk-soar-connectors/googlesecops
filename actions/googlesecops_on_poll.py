@@ -136,7 +136,7 @@ class OnPollAction(BaseAction):
         page_token = state.get("page_token")
         if page_token:
             self._connector.save_progress("Resuming with page token from state")
-            self._connector.debug_print(f"Using page_token: {page_token[:20]}...")
+            self._connector.debug_print(f"Using page_token")
             return page_token, "", previous_start_time
 
         # Priority 2: Check for page_start_time in state
@@ -198,10 +198,6 @@ class OnPollAction(BaseAction):
 
         batch_size = min(max_results, consts.DEFAULT_BATCH_SIZE)
         request_body["detectionBatchSize"] = batch_size
-
-        self._connector.debug_print(f"Request params: batchSize={batch_size}")
-        self._connector.debug_print(f"Request body: {request_body}")
-
         return request_body
 
     def _configure_rule_filters(self):
@@ -468,7 +464,7 @@ class OnPollAction(BaseAction):
 
         if next_page_token:
             stream_state["last_page_token"] = next_page_token
-            self._connector.debug_print(f"Received nextPageToken: {stream_state['last_page_token'][:20]}...")
+            self._connector.debug_print(f"Received nextPageToken")
 
         # nextPageStartTime without nextPageToken means end-of-page window.
         # Clear token so the next cycle uses page_start_time.
@@ -561,7 +557,6 @@ class OnPollAction(BaseAction):
         """Handle errors during stream processing."""
         error_msg = self._connector.utils._get_error_message_from_exception(error)
         self._connector.save_progress(error_msg)
-        self._connector.debug_print(error_msg)
 
         if not is_poll_now and (stream_state.get("last_page_token") or stream_state.get("last_page_start_time")):
             self._connector.save_progress("Saving checkpoint before error recovery...")
@@ -748,11 +743,12 @@ class OnPollAction(BaseAction):
             "detection_id": detection.get("id"),
             "creation_time": detection.get("createdTime"),
             "detection_time": detection.get("detectionTime"),
+            "detection_type": detection.get("type"),
             "time_window_start_time": time_window_start_time,
             "time_window_end_time": time_window_end_time,
-            "ruleVersion": detection_details.get("ruleVersion"),
-            "alertState": detection_details.get("alertState"),
-            "ruleType": detection_details.get("ruleType"),
+            "rule_version": detection_details.get("ruleVersion"),
+            "alert_state": detection_details.get("alertState"),
+            "rule_type": detection_details.get("ruleType"),
             "severity": detection_details.get("severity"),
         }
 
@@ -904,7 +900,7 @@ class OnPollAction(BaseAction):
             if state.get("page_token") != page_token:
                 state["page_token"] = page_token
                 state_updated = True
-                self._connector.debug_print(f"Saved checkpoint: pageToken={page_token[:20]}...")
+                self._connector.debug_print(f"Saved checkpoint")
         elif page_start_time:
             if "page_token" in state:
                 state.pop("page_token", None)

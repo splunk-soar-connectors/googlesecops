@@ -15,7 +15,6 @@
   ```
   **Recommneded**: Use anyone of **Rule Names for Ingestion** or **Rule IDs for Ingestion**
 - **Max Results for Scheduled Poll and Max Results for Poll Now**: If the specified number of detections are fetched before the polling cycle completes, the connection will close and reopen in the next polling cycle. The default value is 10000.
-- **Max Artifacts**: The maximum number of artifacts per container is recommended not to exceed 2000 as recommended by Splunk. The default value is 1000.
 
 **Note:**
 

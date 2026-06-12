@@ -196,7 +196,6 @@ class ListEventsAction(BaseAction):
 
         endpoint = f"{self._connector.client.base_url}/legacy:legacyFindAssetEvents"
         self._connector.debug_print(f"[list_events] Making API call to: {endpoint}")
-        self._connector.debug_print(f"[list_events] Request params: {api_params}")
 
         return self._connector.utils.make_rest_call(
             endpoint,
@@ -232,7 +231,6 @@ class ListEventsAction(BaseAction):
         # Extract URI if present
         if uri:
             summary["uri"] = uri[0] if isinstance(uri, list) else uri
-            self._connector.debug_print(f"[list_events] URI extracted: {summary['uri']}")
 
         self._connector.debug_print(
             f"[list_events] Summary: total_events={len(all_events)}, more_data_available={summary['more_data_available']}"

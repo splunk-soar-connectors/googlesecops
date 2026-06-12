@@ -246,7 +246,6 @@ class ListDetectionsAction(BaseAction):
         """Make the API call to list detections."""
         endpoint = f"{self._connector.client.base_url}/legacy:legacySearchDetections"
         self._connector.debug_print(f"[list_detections] Making paginated API call to: {endpoint}")
-        self._connector.debug_print(f"[list_detections] Request params: {api_params}")
 
         return self._connector.utils.paginated_rest_call(
             endpoint,

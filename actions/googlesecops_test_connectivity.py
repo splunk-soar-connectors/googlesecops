@@ -35,23 +35,18 @@ class TestConnectivityAction(BaseAction):
 
         try:
             test_url = self._connector.client.base_url
-            self._connector.debug_print(f"[test_connectivity] Test URL created: {test_url}")
 
             self._connector.debug_print("[test_connectivity] Making test API call to list rules")
-            ret_val, response = self._connector.utils.make_rest_call(test_url, self._action_result, method="get")
+            ret_val, _ = self._connector.utils.make_rest_call(test_url, self._action_result, method="get")
 
             if phantom.is_fail(ret_val):
-                self._connector.debug_print("[test_connectivity] Test API call failed")
                 self._connector.save_progress(consts.ERROR_TEST_CONNECTIVITY)
                 return self._action_result.get_status()
 
-            self._connector.debug_print("[test_connectivity] Test API call succeeded")
-            self._connector.debug_print(f"[test_connectivity] Response keys: {list(response.keys()) if response else 'None'}")
             self._connector.save_progress(consts.SUCCESS_TEST_CONNECTIVITY)
             return self._action_result.set_status(phantom.APP_SUCCESS)
 
         except Exception as e:
-            self._connector.debug_print(f"[test_connectivity] Exception type: {type(e).__name__}")
             error_msg = self._connector.utils._get_error_message_from_exception(e)
             self._connector.save_progress(f"{consts.ERROR_TEST_CONNECTIVITY}: {error_msg}")
             return self._action_result.set_status(phantom.APP_ERROR, error_msg)

@@ -344,13 +344,13 @@ class GoogleSecOpsUtils:
         Returns:
             tuple: A tuple containing the status of the processing and the data to return.
         """
-        self._connector.debug_print(f"[make_rest_call] Starting REST call: method={method}, endpoint={endpoint}...")
+        self._connector.debug_print(f"Starting REST call: method={method}, endpoint={endpoint}...")
         resp_json = None
 
         try:
             request_func = getattr(self._connector.client.http_client, method, timeout)
         except AttributeError:
-            self._connector.debug_print(f"[make_rest_call] Invalid method: {method}")
+            self._connector.debug_print(f"Invalid method: {method}")
             return RetVal(
                 action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"),
                 resp_json,
@@ -376,7 +376,7 @@ class GoogleSecOpsUtils:
                 return result
 
         # Should never reach here
-        self._connector.debug_print("[make_rest_call] Unexpected: reached end of retry loop")
+        self._connector.debug_print("Unexpected: reached end of retry loop")
         return RetVal(
             action_result.set_status(
                 phantom.APP_ERROR,
@@ -400,9 +400,7 @@ class GoogleSecOpsUtils:
         current_timeout = timeout_values[attempt]
 
         try:
-            self._connector.debug_print(f"[make_rest_call] Attempt {attempt + 1}/{max_attempts}: Calling with timeout={current_timeout}s")
             r = request_func(url, timeout=current_timeout, **kwargs)
-            self._connector.debug_print(f"[make_rest_call] Request succeeded on attempt {attempt + 1}, status_code={r.status_code}")
             return self._process_response(r, action_result)
 
         except (
@@ -448,10 +446,9 @@ class GoogleSecOpsUtils:
         action_result,
     ):
         """Handle timeout errors with retry logic."""
-        self._connector.debug_print(f"[make_rest_call] Timeout on attempt {attempt + 1}: {type(error).__name__} - {error!s}")
 
         if attempt == max_attempts - 1:
-            self._connector.debug_print(f"[make_rest_call] All {max_attempts} attempts exhausted, failing")
+            self._connector.debug_print(f"All {max_attempts} attempts exhausted, failing")
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR,
@@ -473,10 +470,9 @@ class GoogleSecOpsUtils:
         action_result,
     ):
         """Handle connection errors with retry logic."""
-        self._connector.debug_print(f"[make_rest_call] Connection error on attempt {attempt + 1}: {error!s}")
 
         if attempt == max_attempts - 1:
-            self._connector.debug_print(f"[make_rest_call] All {max_attempts} attempts exhausted, failing")
+            self._connector.debug_print(f"All {max_attempts} attempts exhausted, failing")
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR,
@@ -494,7 +490,7 @@ class GoogleSecOpsUtils:
             f"Request failed (attempt {attempt + 1}/{max_attempts}). "
             f"Retrying in {retry_wait_time} seconds with timeout={timeout_values[attempt + 1]}s..."
         )
-        self._connector.debug_print(f"[make_rest_call] Sleeping for {retry_wait_time} seconds before retry")
+        self._connector.debug_print(f"Sleeping for {retry_wait_time} seconds before retry")
         time.sleep(retry_wait_time)
 
     def paginated_rest_call(
@@ -532,9 +528,6 @@ class GoogleSecOpsUtils:
         self._connector.save_progress(
             f"Fetching up to {max_results} items (page size: {min(max_results, 10000)})...and params_dict {params_dict}"
         )
-        self._connector.debug_print(
-            f"[paginated_rest_call] Starting pagination: max_results={max_results}, initial_page_token={'<present>' if initial_page_token else '<none>'}"
-        )
 
         while total_fetched < max_results:
             result = self._fetch_page(
@@ -557,7 +550,7 @@ class GoogleSecOpsUtils:
                 return RetVal(ret_val, None)
 
             if not data_items:
-                self._connector.debug_print("[paginated_rest_call] No data items in response, stopping pagination")
+                self._connector.debug_print("No data items in response, stopping pagination")
                 break
 
             # Capture metadata from first response
@@ -566,7 +559,7 @@ class GoogleSecOpsUtils:
 
             all_data.extend(data_items)
             total_fetched += len(data_items)
-            self._connector.debug_print(f"[paginated_rest_call] Added {len(data_items)} items, total_fetched now: {total_fetched}")
+            self._connector.debug_print(f"Added {len(data_items)} items, total_fetched now: {total_fetched}")
             self._connector.save_progress(f"Fetched {total_fetched} items so far...")
 
             # Check if we should continue pagination
@@ -579,8 +572,7 @@ class GoogleSecOpsUtils:
 
         result_data = self._build_result_data(all_data, response if all_data else {}, metadata)
         self._connector.debug_print(
-            f"[paginated_rest_call] Pagination complete: total items={len(all_data)}, "
-            f"next_page_token={'<present>' if result_data['next_page_token'] else '<none>'}"
+            f"Pagination complete: total items={len(all_data)}, next_page_token={'<present>' if result_data['next_page_token'] else '<none>'}"
         )
         return RetVal(phantom.APP_SUCCESS, result_data)
 
@@ -597,11 +589,11 @@ class GoogleSecOpsUtils:
         kwargs,
     ):
         """Fetch a single page of results."""
-        self._connector.debug_print(f"[paginated_rest_call] Pagination loop iteration: total_fetched={total_fetched}/{max_results}")
+        self._connector.debug_print(f"Pagination loop iteration: total_fetched={total_fetched}/{max_results}")
 
         request_params = self._build_request_params(params_dict, max_results, total_fetched, current_page_token)
 
-        self._connector.debug_print(f"[paginated_rest_call] Making API call with page_token={'<present>' if current_page_token else '<none>'}")
+        self._connector.debug_print(f"Making API call with page_token={'<present>' if current_page_token else '<none>'}")
 
         ret_val, response = self.make_rest_call(
             endpoint_template,
@@ -615,7 +607,7 @@ class GoogleSecOpsUtils:
             return (ret_val, None, None)
 
         data_items = response.get(data_key, [])
-        self._connector.debug_print(f"[paginated_rest_call] Extracted {len(data_items)} items from response (key: {data_key})")
+        self._connector.debug_print(f"Extracted {len(data_items)} items from response (key: {data_key})")
 
         return (ret_val, response, data_items)
 
@@ -658,23 +650,22 @@ class GoogleSecOpsUtils:
         more_data_available = response.get("moreDataAvailable", False)
 
         self._connector.debug_print(
-            f"[paginated_rest_call] Next page info: nextPageToken={'<present>' if next_page_token else '<none>'}, "
-            f"moreDataAvailable={more_data_available}"
+            f"Next page info: nextPageToken={'<present>' if next_page_token else '<none>'}, moreDataAvailable={more_data_available}"
         )
 
         if not next_page_token and not more_data_available:
-            self._connector.debug_print("[paginated_rest_call] No more pages available, stopping pagination")
+            self._connector.debug_print("No more pages available, stopping pagination")
             return False, None
 
         if total_fetched >= max_results:
-            self._connector.debug_print(f"[paginated_rest_call] Reached max_results ({max_results}), stopping pagination")
+            self._connector.debug_print(f"Reached max_results ({max_results}), stopping pagination")
             return False, None
 
         if next_page_token:
-            self._connector.debug_print("[paginated_rest_call] Continuing to next page")
+            self._connector.debug_print("Continuing to next page")
             return True, next_page_token
 
-        self._connector.debug_print("[paginated_rest_call] No page token available, stopping pagination")
+        self._connector.debug_print("No page token available, stopping pagination")
         return False, None
 
     def _build_result_data(self, all_data, response, metadata):

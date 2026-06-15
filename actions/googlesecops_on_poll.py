@@ -156,7 +156,6 @@ class OnPollAction(BaseAction):
         if not page_start_time:
             self._connector.debug_print("[on_poll] No start_time configured, defaulting to last 1 day")
             start_dt = datetime.now(UTC) - timedelta(days=1)
-            page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
         else:
             # Validate that configured start_time is not more than 7 days in the past
             ret_val, start_dt = self._connector.validator.validate_time_parameter(
@@ -170,20 +169,44 @@ class OnPollAction(BaseAction):
             if phantom.is_fail(ret_val):
                 self._connector.save_progress("Configured start_time is more than 7 days in the past or invalid. Using last 1 day instead.")
                 start_dt = datetime.now(UTC) - timedelta(days=1)
-                page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
 
+            api_limit = datetime.now(UTC) - timedelta(days=7) + timedelta(minutes=1)
+            if start_dt < api_limit:
+                self._connector.save_progress("start_time is at the 7-day API boundary; adjusting by 1 minute to stay within limit.")
+                start_dt = api_limit
+
+        page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
         self._connector.save_progress(f"Using start time {page_start_time} for {poll_type}")
         return page_start_time
 
     def _setup_poll_now_pagination(self):
         """Setup pagination for poll now."""
-        page_start_time = self._connector.client.start_time_poll_now or self._connector.client.start_time
+        configured_time = self._connector.client.start_time_poll_now or self._connector.client.start_time
 
-        if not page_start_time:
+        if not configured_time:
             self._connector.debug_print("[on_poll] No start_time configured for poll_now, defaulting to last 1 day")
             start_dt = datetime.now(UTC) - timedelta(days=1)
-            page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
+        else:
+            ret_val, start_dt = self._connector.validator.validate_time_parameter(
+                self._action_result,
+                configured_time,
+                "start_time",
+                allow_future=False,
+                max_days_past=7,
+            )
 
+            if phantom.is_fail(ret_val):
+                self._connector.save_progress("Configured start_time is more than 7 days in the past or invalid. Using last 1 day instead.")
+                start_dt = datetime.now(UTC) - timedelta(days=1)
+
+            # Apply buffer so the timestamp never sits exactly on the 7-day boundary
+            # by the time the API processes the request (connection setup + latency).
+            api_limit = datetime.now(UTC) - timedelta(days=7) + timedelta(minutes=5)
+            if start_dt < api_limit:
+                self._connector.save_progress("start_time is at the 7-day API boundary; adjusting by 5 minutes to stay within limit.")
+                start_dt = api_limit
+
+        page_start_time = start_dt.strftime(DATE_FORMAT_RFC3339)
         self._connector.save_progress(f"Using start time {page_start_time} for poll now.")
         return None, page_start_time, None
 

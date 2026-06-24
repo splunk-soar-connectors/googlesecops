@@ -57,7 +57,7 @@ class OnPollAction(BaseAction):
         is_poll_now = self._connector.is_poll_now()
 
         if is_poll_now:
-            self._connector.save_progress("Running POLL NOW (20 minute timeout)")
+            self._connector.save_progress("Running POLL NOW (50 minute timeout)")
             max_results = self._connector.client.max_results_poll_now
         else:
             self._connector.save_progress("Running scheduled/interval poll (50 minute timeout)")
@@ -84,7 +84,7 @@ class OnPollAction(BaseAction):
         Args:
             max_results: Maximum number of detections to ingest
             is_poll_now: Whether this is a POLL NOW run
-            poll_timeout: Maximum time in seconds for this poll (20 min for poll_now, 50 min for scheduled)
+            poll_timeout: Maximum time in seconds for this poll (50 min)
 
         Returns:
             phantom.APP_SUCCESS/phantom.APP_ERROR

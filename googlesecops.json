@@ -16,7 +16,7 @@
     "latest_tested_versions": [
         "Chronicle API version: v1Alpha"
     ],
-    "utctime_updated": "2026-03-24T09:43:14.335530Z",
+    "utctime_updated": "2026-06-30T06:22:39.940380Z",
     "package_name": "phantom_googlesecops",
     "main_module": "googlesecops_connector.py",
     "min_phantom_version": "7.1.0.225",

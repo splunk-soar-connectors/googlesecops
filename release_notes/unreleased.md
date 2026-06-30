@@ -1,3 +1,3 @@
 **Unreleased**
 
-* Initial Release
+* Initial Release of googleSecops connector.
